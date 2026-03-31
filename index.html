@@ -15,6 +15,8 @@
             --accent: #eee;
             --input-bg: #fafafa;
             --radius: 15px;
+            --anger-red: #ff4b2b;
+            --anger-yellow: #ffb400;
         }
 
         body {
@@ -26,7 +28,8 @@
             justify-content: center;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
+            overflow: hidden;
+            transition: background-color 0.5s ease;
         }
 
         .container {
@@ -42,7 +45,6 @@
         h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; }
         .subtitle { font-size: 0.85rem; color: #666; font-weight: 500; margin-bottom: 40px; }
 
-        /* メインアクションエリア */
         .anchor-stage {
             flex-grow: 1;
             display: flex;
@@ -52,31 +54,38 @@
             min-height: 300px;
         }
 
-        /* 巨大なアンカーボタン */
+        /* メインボタン（円形・パルスアニメーション用） */
         .main-btn {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%; /* ここだけは円形の方が「ボタン感」が出るため例外的に円形にしていますが、憲法に則り四角にするなら15pxに変更可能です */
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
             background: var(--main);
             color: #fff;
             border: none;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 900;
             cursor: pointer;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            transition: transform 0.1s, background 0.3s;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+            transition: transform 0.1s, background 0.3s, box-shadow 0.3s;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             -webkit-appearance: none;
+            z-index: 10;
         }
         .main-btn:active { transform: scale(0.95); }
-        .main-btn.active { background: #eee; color: #333; cursor: default; }
 
-        /* カウントダウンと介入テキスト */
-        .counter { font-size: 4rem; font-weight: 900; display: none; margin-bottom: 10px; }
-        .logic-task { font-size: 1.5rem; font-weight: 700; color: #666; height: 2rem; margin-bottom: 20px; display: none; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .pulsing { animation: pulse 1s infinite ease-in-out; }
+
+        .counter { font-size: 5rem; font-weight: 900; display: none; margin-bottom: 5px; }
+        .logic-task { font-size: 1.6rem; font-weight: 700; color: var(--main); min-height: 2rem; margin-bottom: 20px; display: none; }
+        .final-msg { font-size: 1.3rem; font-weight: 800; line-height: 1.4; display: none; padding: 0 20px; }
 
         footer { margin-top: 50px; font-size: 11px; color: #aaa; line-height: 1.8; }
         .footer-btns { margin-top: 30px; }
@@ -111,9 +120,11 @@
     <div class="anchor-stage">
         <div id="counter" class="counter">6</div>
         <div id="task" class="logic-task"></div>
+        <div id="finalMsg" class="final-msg"></div>
+        
         <button id="anchorBtn" class="main-btn" onclick="startAnchor()">
-            <span>⚓️</span>
-            <span style="font-size: 0.9rem; margin-top: 5px;">DROP ANCHOR</span>
+            <span style="font-size: 2.5rem;">⚓️</span>
+            <span style="font-size: 0.85rem; margin-top: 8px; letter-spacing: 1px;">DROP ANCHOR</span>
         </button>
     </div>
 
@@ -141,9 +152,18 @@
 <script>
     let timeLeft = 6;
     let timerId = null;
+    const MESSAGES = [
+        "Is it worth your energy?",
+        "Respond, don't react.",
+        "Take a deep breath.",
+        "Choose your peace.",
+        "Logic over emotion."
+    ];
+
     const anchorBtn = document.getElementById('anchorBtn');
     const counterEl = document.getElementById('counter');
     const taskEl = document.getElementById('task');
+    const finalMsgEl = document.getElementById('finalMsg');
 
     function generateTask() {
         const a = Math.floor(Math.random() * 9) + 1;
@@ -154,13 +174,14 @@
     function startAnchor() {
         if (timerId) return;
 
-        // UI切り替え
+        // 初期表示切り替え
         anchorBtn.style.display = 'none';
+        finalMsgEl.style.display = 'none';
         counterEl.style.display = 'block';
         taskEl.style.display = 'block';
         
         timeLeft = 6;
-        updateDisplay();
+        updateUI();
 
         timerId = setInterval(() => {
             timeLeft--;
@@ -169,26 +190,46 @@
                 timerId = null;
                 finish();
             } else {
-                updateDisplay();
+                updateUI();
             }
         }, 1000);
     }
 
-    function updateDisplay() {
+    function updateUI() {
         counterEl.innerText = timeLeft;
         taskEl.innerText = generateTask();
-        // 視覚的刺激として背景を一瞬フラッシュさせる（理性を呼び戻す）
-        document.body.style.backgroundColor = '#f0f0f0';
-        setTimeout(() => document.body.style.backgroundColor = '#fff', 50);
+
+        // 段階的な色の変化（ボタンの影と背景）
+        if (timeLeft > 3) {
+            // 6-4秒: 警戒（赤み）
+            anchorBtn.style.boxShadow = `0 15px 30px rgba(255, 75, 43, 0.3)`;
+            document.body.style.backgroundColor = "#fff9f9";
+        } else {
+            // 3-1秒: 注意（黄色み）
+            anchorBtn.style.boxShadow = `0 15px 30px rgba(255, 180, 0, 0.3)`;
+            document.body.style.backgroundColor = "#fffdf2";
+        }
+
+        // 視覚的なパルス効果（脳を刺激）
+        counterEl.style.transform = "scale(1.1)";
+        setTimeout(() => counterEl.style.transform = "scale(1)", 100);
     }
 
     function finish() {
         counterEl.style.display = 'none';
-        taskEl.innerText = "Calmness restored.";
+        taskEl.style.display = 'none';
+        document.body.style.backgroundColor = "#fff";
+
+        // ランダムなメッセージの表示
+        const randomMsg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+        finalMsgEl.innerText = randomMsg;
+        finalMsgEl.style.display = 'block';
+
         setTimeout(() => {
-            taskEl.style.display = 'none';
+            finalMsgEl.style.display = 'none';
             anchorBtn.style.display = 'flex';
-        }, 2000);
+            anchorBtn.style.boxShadow = "0 15px 30px rgba(0,0,0,0.15)";
+        }, 3000);
     }
 
     function showModal() { document.getElementById('modal').style.display = 'flex'; }
