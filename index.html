@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Anger Anchor</title>
+    
+    <link rel="icon" href="image_48.png">
+    <link rel="apple-touch-icon" href="image_48.png">
+
+    <style>
+        :root {
+            --main: #333;
+            --bg: #fff;
+            --accent: #eee;
+            --input-bg: #fafafa;
+            --radius: 15px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; }
+        .subtitle { font-size: 0.85rem; color: #666; font-weight: 500; margin-bottom: 40px; }
+
+        /* メインアクションエリア */
+        .anchor-stage {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+        }
+
+        /* 巨大なアンカーボタン */
+        .main-btn {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%; /* ここだけは円形の方が「ボタン感」が出るため例外的に円形にしていますが、憲法に則り四角にするなら15pxに変更可能です */
+            background: var(--main);
+            color: #fff;
+            border: none;
+            font-size: 1.5rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: transform 0.1s, background 0.3s;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            -webkit-appearance: none;
+        }
+        .main-btn:active { transform: scale(0.95); }
+        .main-btn.active { background: #eee; color: #333; cursor: default; }
+
+        /* カウントダウンと介入テキスト */
+        .counter { font-size: 4rem; font-weight: 900; display: none; margin-bottom: 10px; }
+        .logic-task { font-size: 1.5rem; font-weight: 700; color: #666; height: 2rem; margin-bottom: 20px; display: none; }
+
+        footer { margin-top: 50px; font-size: 11px; color: #aaa; line-height: 1.8; }
+        .footer-btns { margin-top: 30px; }
+        .kofi-btn {
+            display: inline-block; background: var(--main); color: #fff;
+            padding: 12px 25px; border-radius: var(--radius);
+            text-decoration: none; font-weight: bold; font-size: 14px; margin-bottom: 12px;
+        }
+        .home-btn {
+            display: block; width: 60%; margin: 0 auto; background: var(--accent);
+            color: var(--main); border: none; padding: 10px;
+            border-radius: var(--radius); font-weight: 700; font-size: 13px; cursor: pointer;
+        }
+
+        #modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100;
+        }
+        .modal-content {
+            background: #fff; width: 85%; max-width: 320px; padding: 30px;
+            border-radius: var(--radius); text-align: left; position: relative;
+        }
+        .close-x { position: absolute; top: 15px; right: 20px; font-size: 20px; color: #ccc; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Anger Anchor</h1>
+    <p class="subtitle">Drop the anchor. 6 seconds to logic.</p>
+
+    <div class="anchor-stage">
+        <div id="counter" class="counter">6</div>
+        <div id="task" class="logic-task"></div>
+        <button id="anchorBtn" class="main-btn" onclick="startAnchor()">
+            <span>⚓️</span>
+            <span style="font-size: 0.9rem; margin-top: 5px;">DROP ANCHOR</span>
+        </button>
+    </div>
+
+    <div class="footer-btns">
+        <a href="https://ko-fi.com/afrorakda" target="_blank" class="kofi-btn">☕️buy me a coffee</a>
+        <button class="home-btn" onclick="showModal()">Add to Home Screen</button>
+    </div>
+
+    <footer>
+        <div>No login / No tracking / No ads / Browser only</div>
+        <div>Privacy Policy / afrorakda © 2026</div>
+    </footer>
+</div>
+
+<div id="modal" onclick="hideModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-x" onclick="hideModal()">×</span>
+        <h3>📱 Install</h3>
+        <p>Add to your home screen.</p>
+        <p>🍏 <strong>iPhone (Safari):</strong><br>Tap Share, then Add to Home Screen.</p>
+        <p>🤖 <strong>Android (Chrome):</strong><br>Tap Menu (⋮), then Add to Home Screen.</p>
+    </div>
+</div>
+
+<script>
+    let timeLeft = 6;
+    let timerId = null;
+    const anchorBtn = document.getElementById('anchorBtn');
+    const counterEl = document.getElementById('counter');
+    const taskEl = document.getElementById('task');
+
+    function generateTask() {
+        const a = Math.floor(Math.random() * 9) + 1;
+        const b = Math.floor(Math.random() * 9) + 1;
+        return `${a} + ${b} = ?`;
+    }
+
+    function startAnchor() {
+        if (timerId) return;
+
+        // UI切り替え
+        anchorBtn.style.display = 'none';
+        counterEl.style.display = 'block';
+        taskEl.style.display = 'block';
+        
+        timeLeft = 6;
+        updateDisplay();
+
+        timerId = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(timerId);
+                timerId = null;
+                finish();
+            } else {
+                updateDisplay();
+            }
+        }, 1000);
+    }
+
+    function updateDisplay() {
+        counterEl.innerText = timeLeft;
+        taskEl.innerText = generateTask();
+        // 視覚的刺激として背景を一瞬フラッシュさせる（理性を呼び戻す）
+        document.body.style.backgroundColor = '#f0f0f0';
+        setTimeout(() => document.body.style.backgroundColor = '#fff', 50);
+    }
+
+    function finish() {
+        counterEl.style.display = 'none';
+        taskEl.innerText = "Calmness restored.";
+        setTimeout(() => {
+            taskEl.style.display = 'none';
+            anchorBtn.style.display = 'flex';
+        }, 2000);
+    }
+
+    function showModal() { document.getElementById('modal').style.display = 'flex'; }
+    function hideModal() { document.getElementById('modal').style.display = 'none'; }
+</script>
+
+</body>
+</html>
